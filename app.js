@@ -55,7 +55,7 @@ app.get("/",function(req,res){
             });
             res.redirect("/");
         }else{
-            res.render('list', {Day : day, newItems : foundItems});
+            res.render('list', {listTitle : day, newItems : foundItems});
         }
     });
 
@@ -77,7 +77,7 @@ app.get("/:customListName",function(req,res){
                 res.redirect("/" + listName);
             }else{
                 //show the existing list
-                res.render('list', {Day : foundList.name, newItems : foundList.items});
+                res.render('list', {listTitle : foundList.name, newItems : foundList.items});
             }
         }
     });
@@ -85,26 +85,46 @@ app.get("/:customListName",function(req,res){
 
 app.post("/",function(req,res){
     var newItem = req.body.newItem;
+    var listName = req.body.list;
+
     const item = new Item({
         name : newItem
     });
 
-    item.save();
+    var day = date();
 
-    res.redirect("/");
+    if(listName === day){
+        item.save();
+        res.redirect("/");
+    }else{
+        List.findOne({name : listName},function(err,foundList){
+            foundList.items.push(item);
+            foundList.save();
+            res.redirect("/"+listName);
+        });
+    }
+
+
 });
 
 app.post("/delete",function(req,res){
     const checkedItemId = req.body.checkbox;
-    Item.findByIdAndRemove(checkedItemId, function(err){
-        if(err){
-            console.log(err);
-        }else{
-            console.log("Successfully deleted the checked item from DB.");
-        }
-    });
+    const listName = req.body.listName;
 
-    res.redirect("/");
+    if(listName === day){
+        Item.findByIdAndRemove(checkedItemId, function(err){
+            if(err){
+                console.log(err);
+            }else{
+                console.log("Successfully deleted the checked item from DB.");
+            }
+        });
+
+        res.redirect("/");
+    }else{
+
+    }
+
 });
 
 app.listen(3000, function(req,res){
